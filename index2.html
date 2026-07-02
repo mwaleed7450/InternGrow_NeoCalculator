@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRUTE — Calculator</title>
+<style>
+  :root{
+    --bg:#fff9e8;
+    --ink:#111111;
+    --accent:#ff4d00;
+    --accent2:#0033ff;
+    --accent3:#00b34d;
+    --panel:#ffffff;
+    --shadow: 6px 6px 0 var(--ink);
+    --mono: 'Courier New', monospace;
+    --display: 'Arial Black', Impact, sans-serif;
+  }
+  [data-theme="dark"]{
+    --bg:#141414;
+    --ink:#f5f5f0;
+    --panel:#1e1e1e;
+    --shadow: 6px 6px 0 #000000;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--mono);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:30px 16px;
+    transition:background .2s ease, color .2s ease;
+  }
+
+  .app{
+    width:100%;
+    max-width:420px;
+  }
+
+  .top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:18px;
+  }
+  .logo{
+    font-family:var(--display);
+    font-size:28px;
+    letter-spacing:-.02em;
+    text-transform:uppercase;
+  }
+  .logo span{color:var(--accent);}
+
+  .switches{
+    display:flex;
+    gap:8px;
+  }
+  .swbtn{
+    border:3px solid var(--ink);
+    background:var(--panel);
+    color:var(--ink);
+    font-family:var(--mono);
+    font-weight:bold;
+    font-size:11px;
+    text-transform:uppercase;
+    padding:8px 10px;
+    cursor:pointer;
+    box-shadow:3px 3px 0 var(--ink);
+    transition:transform .1s ease, box-shadow .1s ease;
+  }
+  .swbtn:hover{transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink);}
+  .swbtn:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink);}
+  .swbtn.on{background:var(--accent); color:#fff; border-color:var(--ink);}
+
+  .panel{
+    border:4px solid var(--ink);
+    background:var(--panel);
+    box-shadow:var(--shadow);
+    padding:20px;
+  }
+
+  .mode-tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:14px;
+  }
+  .mode-tab{
+    flex:1;
+    border:3px solid var(--ink);
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--mono);
+    font-weight:bold;
+    font-size:11px;
+    text-transform:uppercase;
+    padding:8px 4px;
+    cursor:pointer;
+  }
+  .mode-tab.active{background:var(--accent2); color:#fff;}
+
+  .base-row{
+    display:none;
+    gap:6px;
+    margin-bottom:14px;
+  }
+  .base-row.show{display:flex;}
+  .base-btn{
+    flex:1;
+    border:3px solid var(--ink);
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--mono);
+    font-weight:bold;
+    font-size:11px;
+    padding:7px 2px;
+    cursor:pointer;
+  }
+  .base-btn.active{background:var(--accent3); color:#fff;}
+
+  .display{
+    border:3px solid var(--ink);
+    background:var(--ink);
+    color:var(--bg);
+    padding:18px 14px;
+    margin-bottom:16px;
+    text-align:right;
+    overflow-x:auto;
+  }
+  .display .prev{
+    font-size:13px;
+    opacity:.55;
+    min-height:16px;
+    white-space:nowrap;
+  }
+  .display .curr{
+    font-family:var(--display);
+    font-size:clamp(24px,7vw,38px);
+    white-space:nowrap;
+    letter-spacing:-.01em;
+  }
+
+  .pad{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+  }
+  .key{
+    border:3px solid var(--ink);
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--display);
+    font-size:18px;
+    padding:16px 4px;
+    cursor:pointer;
+    box-shadow:4px 4px 0 var(--ink);
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .key:hover{transform:translate(-1px,-1px); box-shadow:5px 5px 0 var(--ink);}
+  .key:active{transform:translate(3px,3px); box-shadow:1px 1px 0 var(--ink);}
+  .key.op{background:var(--accent2); color:#fff;}
+  .key.eq{background:var(--accent); color:#fff; grid-column:span 2;}
+  .key.fn{background:transparent; font-size:14px;}
+  .key.wide{grid-column:span 2;}
+  .key[disabled]{opacity:.25; cursor:not-allowed; box-shadow:none;}
+
+  .foot{
+    text-align:center;
+    margin-top:16px;
+    font-size:10px;
+    opacity:.5;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+  }
+
+  @media (max-width:380px){
+    .key{font-size:16px; padding:14px 2px;}
+  }
+</style>
+</head>
+<body data-theme="light">
+
+<div class="app">
+  <div class="top">
+    <div class="logo">BRUTE<span>.</span></div>
+    <div class="switches">
+      <button class="swbtn" id="themeBtn">DARK</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="standard">Standard</button>
+      <button class="mode-tab" data-mode="programmer">Programmer</button>
+    </div>
+
+    <div class="base-row" id="baseRow">
+      <button class="base-btn active" data-base="10">DEC</button>
+      <button class="base-btn" data-base="16">HEX</button>
+      <button class="base-btn" data-base="2">BIN</button>
+    </div>
+
+    <div class="display">
+      <div class="prev" id="prevDisplay">&nbsp;</div>
+      <div class="curr" id="currDisplay">0</div>
+    </div>
+
+    <div class="pad" id="pad"></div>
+  </div>
+
+  <div class="foot">InternGrow · Task 2 · Neo-Brutalist Calculator</div>
+</div>
+
+<script>
+const body = document.body;
+const themeBtn = document.getElementById('themeBtn');
+const modeTabs = document.querySelectorAll('.mode-tab');
+const baseRow = document.getElementById('baseRow');
+const baseBtns = document.querySelectorAll('.base-btn');
+const pad = document.getElementById('pad');
+const prevDisplay = document.getElementById('prevDisplay');
+const currDisplay = document.getElementById('currDisplay');
+
+let mode = 'standard';
+let base = 10;
+let current = '0';
+let previous = '';
+let operator = null;
+let resetNext = false;
+
+// ---- Theme ----
+themeBtn.addEventListener('click', ()=>{
+  const isDark = body.getAttribute('data-theme') === 'dark';
+  body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  themeBtn.classList.toggle('on', !isDark);
+  themeBtn.textContent = isDark ? 'DARK' : 'LIGHT';
+});
+
+// ---- Mode switch ----
+modeTabs.forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    modeTabs.forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    mode = tab.dataset.mode;
+    baseRow.classList.toggle('show', mode === 'programmer');
+    if(mode === 'standard'){ base = 10; }
+    else { base = parseInt(document.querySelector('.base-btn.active').dataset.base); }
+    clearAll();
+    buildPad();
+  });
+});
+
+// ---- Base switch (programmer mode) ----
+baseBtns.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    baseBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    // convert current value to new base
+    const decVal = parseInt(current, base) || 0;
+    base = parseInt(btn.dataset.base);
+    current = decVal.toString(base).toUpperCase();
+    buildPad();
+    updateDisplay();
+  });
+});
+
+// ---- Build keypad based on mode ----
+function buildPad(){
+  pad.innerHTML = '';
+  let keys = [];
+
+  if(mode === 'standard'){
+    keys = [
+      {l:'C', t:'fn'}, {l:'±', t:'fn'}, {l:'%', t:'fn'}, {l:'÷', t:'op'},
+      {l:'7'}, {l:'8'}, {l:'9'}, {l:'×', t:'op'},
+      {l:'4'}, {l:'5'}, {l:'6'}, {l:'−', t:'op'},
+      {l:'1'}, {l:'2'}, {l:'3'}, {l:'+', t:'op'},
+      {l:'0', t:'wide'}, {l:'.'}, {l:'=', t:'eq'}
+    ];
+  } else {
+    // Programmer mode: digits available depend on base
+    keys = [
+      {l:'C', t:'fn'}, {l:'←', t:'fn'}, {l:'AND', t:'op', small:1}, {l:'OR', t:'op', small:1},
+      {l:'7', min:8}, {l:'8', min:10}, {l:'9', min:10}, {l:'÷', t:'op'},
+      {l:'4', min:5}, {l:'5', min:6}, {l:'6', min:7}, {l:'×', t:'op'},
+      {l:'1', min:2}, {l:'2', min:3}, {l:'3', min:4}, {l:'−', t:'op'},
+      {l:'A', min:11, hex:1}, {l:'B', min:11, hex:1}, {l:'C', min:11, hex:1}, {l:'+', t:'op'},
+      {l:'D', min:11, hex:1}, {l:'E', min:11, hex:1}, {l:'F', min:11, hex:1}, {l:'=', t:'eq'},
+      {l:'0', min:2, t:'wide'}, {l:'XOR', t:'op'}
+    ];
+  }
+
+  keys.forEach(k=>{
+    const btn = document.createElement('button');
+    btn.className = 'key' + (k.t ? ' ' + k.t : '');
+    btn.textContent = k.l;
+    if(k.min && base < k.min) btn.disabled = true;
+    btn.addEventListener('click', ()=> handleKey(k.l));
+    pad.appendChild(btn);
+  });
+}
+
+// ---- Calculator logic ----
+function clearAll(){
+  current = '0'; previous=''; operator=null; resetNext=false;
+  updateDisplay();
+}
+
+function updateDisplay(){
+  currDisplay.textContent = current;
+  prevDisplay.textContent = previous && operator ? `${previous} ${operator}` : '\u00A0';
+}
+
+function handleKey(label){
+  if(label === 'C'){ clearAll(); return; }
+  if(label === '←'){ current = current.length>1 ? current.slice(0,-1) : '0'; updateDisplay(); return; }
+  if(label === '±'){ current = (parseFloat(current) * -1).toString(); updateDisplay(); return; }
+  if(label === '%'){ current = (parseFloat(current) / 100).toString(); updateDisplay(); return; }
+
+  const ops = ['+','−','×','÷','AND','OR','XOR'];
+  if(ops.includes(label)){
+    if(operator && !resetNext){ compute(); }
+    previous = current;
+    operator = label;
+    resetNext = true;
+    updateDisplay();
+    return;
+  }
+
+  if(label === '='){
+    compute();
+    operator = null;
+    previous = '';
+    resetNext = true;
+    return;
+  }
+
+  if(label === '.'){
+    if(resetNext){ current = '0.'; resetNext=false; updateDisplay(); return; }
+    if(!current.includes('.')) current += '.';
+    updateDisplay();
+    return;
+  }
+
+  // digit / hex letter
+  if(resetNext || current === '0'){ current = label; resetNext = false; }
+  else { current += label; }
+  updateDisplay();
+}
+
+function compute(){
+  if(!operator || previous === '') return;
+  let a, b, result;
+
+  if(mode === 'programmer'){
+    a = parseInt(previous, base);
+    b = parseInt(current, base);
+  } else {
+    a = parseFloat(previous);
+    b = parseFloat(current);
+  }
+
+  switch(operator){
+    case '+': result = a + b; break;
+    case '−': result = a - b; break;
+    case '×': result = a * b; break;
+    case '÷': result = b !== 0 ? a / b : 'ERR'; break;
+    case 'AND': result = a & b; break;
+    case 'OR': result = a | b; break;
+    case 'XOR': result = a ^ b; break;
+    default: result = b;
+  }
+
+  if(result === 'ERR'){ current = 'ERR'; }
+  else if(mode === 'programmer'){ current = result.toString(base).toUpperCase(); }
+  else {
+    current = Number.isInteger(result) ? result.toString() : parseFloat(result.toFixed(8)).toString();
+  }
+  updateDisplay();
+}
+
+buildPad();
+updateDisplay();
+</script>
+</body>
+</html>
